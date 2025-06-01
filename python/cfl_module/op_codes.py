@@ -73,21 +73,13 @@ if __name__ == "__main__":
     print(op_codes.asm_list)
     print(op_codes.exec_list)
     
-    cf.define_chain("wait_delay_test", auto_flag=True)
-    op_codes.asm_log_message("Starting 10 second delay")
-    op_codes.asm_wait_for_time_out(event_count = 100)
-    op_codes.asm_log_message("10 second delay complete")
-    op_codes.asm_log_message("Testing wait for second event for 5 counts")
-    op_codes.asm_wait_for_event("CF_SECOND_EVENT",event_count = 5)
-    op_codes.asm_log_message("Wait for event complete")
-    op_codes.asm_log_message("Resetting")
-    op_codes.asm_reset()
-    cf.end_chain()
-    cf.finalize()
+    from test_directory.wait_test import CF_Wait_Test
+    cf_wait_test = CF_Wait_Test(cf,op_codes)
+    cf_wait_test.test_wait_delay()
+    cf_wait_test.test_wait_for_event_pass()
+    cf_wait_test.test_wait_for_event_fail_reset()
+    cf_wait_test.test_wait_for_event_fail_terminate()
     
-    cf.cf_engine_start()
-    
- 
     
     
   

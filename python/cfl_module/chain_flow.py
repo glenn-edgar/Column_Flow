@@ -1,7 +1,7 @@
 """
 Chain Flow Module - Event-driven processing system with configurable chains
 """
-
+import sys
 from time import sleep
 from datetime import datetime, timedelta
 
@@ -15,6 +15,16 @@ class ChainFlow:
     """
     
     def __init__(self,time_tick):
+       
+        if not callable(time_tick):
+            raise TypeError("time_tick must be a callable function")
+        self.time_tick = time_tick
+        
+        self.reset_cf()
+        """Initialize ChainFlow with empty chain collections"""
+       
+        
+    def reset_cf(self):
         self.event_id_dict = Event_id_dict()
         self.event_id_dict.add_event_id("CF_TIMER_EVENT","Timer Event")
         self.event_id_dict.add_event_id("CF_SYSTEM_RESET","System Reset Event")
@@ -28,21 +38,20 @@ class ChainFlow:
         self.event_id_dict.add_event_id("CF_MINUTE_EVENT","New Minute Event")
         self.event_id_dict.add_event_id("CF_HOUR_EVENT","New Hour Event")
         self.event_id_dict.add_event_id("CF_DAY_EVENT","New Day Event")
+        self.event_id_dict.add_event_id("CF_TERMINATE_SYSTEM","Terminate System Event")
+        self.event_id_dict.add_event_id("CF_RESET_SYSTEM","Reset System Event")
         
-        if not callable(time_tick):
-            raise TypeError("time_tick must be a callable function")
-        self.time_tick = time_tick
-        """Initialize ChainFlow with empty chain collections"""
+        
+       
+        self._disable = False
+        
+       
         self.list_of_chains = []  # Ordered list of chain names
         self.chain_dict = {}      # Dictionary mapping chain names to chain data
         self._current_chain = None  # Track chain being defined
         self._finalized = False   # Track if chain is finalized
-        self._system_active = False
-        self._execution_active = False
-        # Initialize dual event queue system
-  
-        
-       
+        self._system_active = True
+        self._execution_active = False       
     
     def define_chain(self, chain_name, auto_flag=False):
         """
@@ -81,42 +90,7 @@ class ChainFlow:
         self._current_chain = chain_name
         
         
-    def mark_sm_start(self):
-        if self._finalized:
-            raise RuntimeError("Cannot add elements after finalization")
-        if self._current_chain is None:
-            raise ValueError("No chain is currently being defined. Call define_chain() first.")
-        self.chain_dict[self._current_chain]['sm_start'] = len(self.chain_dict[self._current_chain]['element_list'])
-        self.chain_dict[self._current_chain]['sm_active'] = True
-    
-    def clear_sm_elements(self,chain_name):
-        
-        
-        if chain_name not in self.chain_dict:
-            raise ValueError(f"Chain '{chain_name}' does not exist")
-        if self.chain_dict[chain_name]['sm_active'] == False:
-            return
-        start_index = self.chain_dict[chain_name]['sm_start']
-        for index in range(start_index,len(self.chain_dict[chain_name]['element_list'])):
-            self.chain_dict[chain_name]['element_list'][index]['enable'] = False
-            self.chain_dict[chain_name]['element_list'][index]['initialized'] = False
-        
-    def set_sm_active_index(self,index):
-        chain_name = self._current_chain
-        if self._execution_active == False:
-            raise RuntimeError("Cannot set SM active index before execution start")
-        if chain_name not in self.chain_dict:
-            raise ValueError(f"Chain '{chain_name}' does not exist")
-        if self.chain_dict[chain_name]['sm_active'] == False:
-            raise ValueError(f"Chain '{chain_name}' is not active")
-        if index < self.chain_dict[chain_name]['sm_start']:
-            raise ValueError(f"Index '{index}' is less than SM start index '{self.chain_dict[chain_name]['sm_start']}'")
-        if index > len(self.chain_dict[chain_name]['element_list']):
-            raise ValueError(f"Index '{index}' is greater than the number of elements in chain '{chain_name}'")
-        self.clear_sm_elements(self,chain_name)
-        self.chain_dict[chain_name]['element_list'][index]['enable'] = True
-        self.chain_dict[chain_name]['element_list'][index]['initialized'] = False
-        
+ 
     
     def add_element(self, process_function,initialization_function=None,termination_function=None,data=None, name=None):
         """
@@ -200,7 +174,7 @@ class ChainFlow:
         element_count = len(self.chain_dict[self._current_chain]['element_list'])
         
        
-        self.clear_sm_elements(self._current_chain)
+        
         # Clear current chain
         self._current_chain = None
     
@@ -252,6 +226,7 @@ class ChainFlow:
             TypeError: If chain_name is not a string
             RuntimeError: If system is not finalized
         """
+      
         if not isinstance(chain_name, str):
             raise TypeError("chain_name must be a string")
         
@@ -283,6 +258,7 @@ class ChainFlow:
             TypeError: If chain_name is not a string
             RuntimeError: If system is not finalized
         """
+        
         if not isinstance(chain_name, str):
             raise TypeError("chain_name must be a string")
         
@@ -291,7 +267,8 @@ class ChainFlow:
         
         if chain_name not in self.chain_dict:
             raise ValueError(f"Chain '{chain_name}' does not exist")
-        
+        self.chain_dict[chain_name]['active'] = False
+        self.event_system.clear_callback_events(chain_name)
         # Get the chain data
         chain_data = self.chain_dict[chain_name]
         
@@ -309,7 +286,6 @@ class ChainFlow:
                         element['termination_function'](element)
                         terminated_count += 1
                     except Exception as e:
-                        print(f"Error executing termination function for element '{element['name']}': {e}")
                         raise e
                 
                 # Set element as no longer initialized since we're terminating it
@@ -318,8 +294,7 @@ class ChainFlow:
             # Disable the element
             element['enable'] = False
         
-        # Disable the chain
-        chain_data['active'] = False
+     
     
        
 
@@ -349,6 +324,7 @@ class ChainFlow:
         """
         Send a system event 
         """
+     
         if not isinstance(event, Event):
             raise TypeError("event must be an instance of Event")
         if event.event_id not in self.event_id_dict.event_id_dict:
@@ -390,25 +366,34 @@ class ChainFlow:
                 self.disable_chain(chain_name)
                 disabled_chains.append(chain_name)
         
-       
+    def execute_system_event_loop(self):
+        while self._system_active:
+            self.execute_system_event()
+            if self.event_system.normal_events.size() == 0:
+                break
+            
+            
     def execute_system_event(self):
         """
         Execute the system event
         return True if event processing is to continue, False if it is to stop
         """
         event = self.event_system.get_next_normal_event()
+        
         if event is not None:
             
-            if event == "CF_SYSTEM_STOP":
-                exit()
-            elif event == "CF_SYSTEM_RESET":
+            if event.event_id == "CF_TERMINATE_SYSTEM":
+                self._system_active = False
                 return False
-            
+            elif event.event_id == "CF_RESET_SYSTEM":
+                return False
+            self._system_active = False
             for chain_name in self.list_of_chains:
                 if self.chain_dict[chain_name]['active']:
                     self.execute_chain_event(chain_name,event)
         else:
-            return True
+            pass
+       
         return True
     
     def execute_chain_event(self, chain: str, event: Event):
@@ -432,11 +417,11 @@ class ChainFlow:
             element["current_chain"] = chain
             if element['enable'] == False:
                 continue
-            self._system_active = True  #at least one link is active
             if element['enable'] and element['initialized'] == False:
                 element['initialized'] = True
                 if element['initialization_function'] is not None:
                     element['initialization_function'](element)
+            self._system_active = True
             return_code = element['process_function'](element,event)
             continue_flag = self.analyze_return_code(chain,element,return_code)
             if not continue_flag:
@@ -464,21 +449,26 @@ class ChainFlow:
             self.enable_chain(chain)
             return False
         elif return_code == "CF_TERMINATE":
+            print("terminate chain",chain)
             self.disable_chain(chain)
             return False
-        
+            
+      
         
     def cf_engine_start(self):
         """
         Start the chain flow engine
         """
-        self._execution_active = True
+       
+   
+
         self.time_stamp = time.time()
-        self.current_second = int(self.time_stamp % 60)
-        self.current_minute = int(self.time_stamp / 60)
-        self.current_hour = int(self.time_stamp / 3600)
-        self.current_day = int(self.time_stamp / 86400)
+        self.ref_second = int(self.time_stamp % 60)
+        self.ref_minute = int(self.ref_second / 60)
+        self.ref_hour = int(self.ref_second / 3600)
+        self.ref_day = int(self.ref_second / 86400)
         
+
         
         while True:
         
@@ -486,40 +476,45 @@ class ChainFlow:
             self.initialize_chains()
             
             self._system_active = True
-            while self._system_active:
+            while True:
                 
-                self.execute_system_event()
                 if self._system_active == False:
-                    exit()
-                self.time_tick()   
-                time_stamp = time.time()
-                self.delta_time_stamp = time_stamp - self.time_stamp 
-                self.time_stamp = time_stamp
-                event = Event("CF_TIMER_EVENT",{'delta_time':self.delta_time_stamp,'time_stamp':self.time_stamp})
+                   return
+                self.time_tick() #time delay function  
+                self.ref_time_stamp = self.time_stamp
+                self.time_stamp = time.time()
+                self.current_second = int(self.time_stamp % 60)
+                self.current_minute = int(self.current_second / 60)
+                self.current_hour = int(self.current_second / 3600)
+                self.current_day = int(self.current_second / 86400)
+                   
+                self.time_stamp =time.time()
+                event = Event("CF_TIMER_EVENT",{'delta_time':self.time_stamp - self.ref_time_stamp,'time_stamp':self.time_stamp})
                 self.send_system_event(event)
-                time_stamp = time.time()
-                self.time_stamp = time_stamp
-                new_second = int(time_stamp % 60)
-                if new_second != self.current_second:
-                    self.current_second = new_second
-                    event = Event("CF_SECOND_EVENT",{'second':self.current_second,'time_stamp':time_stamp})
+             
+                
+            
+                if self.current_second != self.ref_second:
+                    self.ref_second = self.current_second
+                    event = Event("CF_SECOND_EVENT",{'second':self.current_second,'time_stamp':self.time_stamp})
                     self.send_system_event(event)
-                new_minute = int(time_stamp / 60)
-                if new_minute != self.current_minute:
-                    self.current_minute = new_minute
-                    event = Event("CF_MINUTE_EVENT",{'minute':self.current_minute,'time_stamp':time_stamp})
+                
+                if self.current_minute != self.ref_minute:
+                    self.ref_minute = self.current_minute
+                    event = Event("CF_MINUTE_EVENT",{'minute':self.current_minute,'time_stamp':self.time_stamp})
                     self.send_system_event(event)
-                new_hour = int(time_stamp / 3600)
-                if new_hour != self.current_hour:
-                    self.current_hour = new_hour
-                    event = Event("CF_HOUR_EVENT",{'hour':self.current_hour,'time_stamp':time_stamp})
+            
+                if self.current_hour != self.ref_hour:
+                    self.ref_hour = self.current_hour
+                    event = Event("CF_HOUR_EVENT",{'hour':self.current_hour,'time_stamp':self.time_stamp})
                     self.send_system_event(event)
-                new_day = int(time_stamp / 86400)
-                if new_day != self.current_day:
-                    self.current_day = new_day
-                    event = Event("CF_DAY_EVENT",{'day':self.current_day,'time_stamp':time_stamp})
+                
+                if self.current_day != self.ref_day:
+                    self.ref_day = self.current_day
+                    event = Event("CF_DAY_EVENT",{'day':self.current_day,'time_stamp':self.time_stamp})
                     self.send_system_event(event)
                     
+                self.execute_system_event_loop()
        
         
     def cf_engine_stop(self):
@@ -532,47 +527,3 @@ class ChainFlow:
 
   
 
-# Example usage and demonstration)
-if __name__ == "__main__":
-    def time_tick():
-        sleep(.1) # 100 ms delay
-        return 0.1,time.time()
-    # Create sample processing functions
-    def add_ten(data):
-        return data + 10
-    
-    def multiply_by_two(data):
-        return data * 2
-    
-    def to_string(data):
-        return f"Result: {data}"
-    
-    def log_init():
-        print("Element initialized!")
-    
-    def log_cleanup():
-        print("Element cleaned up!")
-    
-    # Create and configure chain flow
-    cf = ChainFlow(time_tick)
-    
-    # Define first chain
-    cf.define_chain("math_chain", auto_flag=True)
-    cf.add_element(add_ten, None, None, "add_operation")
-    cf.add_element(multiply_by_two, None, None, "multiply_operation")
-    cf.mark_sm_start()
-    cf.end_chain()
-    
-    # Define second chain
-    cf.define_chain("format_chain", auto_flag=False)
-    cf.add_element(to_string, None, None, "string_formatter")
-    cf.end_chain()
-    cf.finalize()
-    cf.enable_chain("math_chain")
-    cf.enable_chain("format_chain")
-    cf.disable_chain("math_chain")
-    cf.disable_chain("format_chain")
-    cf.initialize_chains()
-       
-    
-   

@@ -2,7 +2,7 @@
 from datetime import datetime
 from asm_support_functions import Support_Functions
 from cf_events import Event_id_dict
-
+from cf_events import Event
 class Basic_Opcodes(Support_Functions):
   def __init__(self,cf):
       self.cf = cf
@@ -80,23 +80,26 @@ class Basic_Opcodes(Support_Functions):
                         data="CF_HALT", name=name)
     
   def asm_terminate_system(self,name = None):
-    self.asm_send_system_event("CF_TERMINATE",name)
+    self.asm_send_system_event("CF_TERMINATE_SYSTEM",None,name)
     
   def asm_reset_system(self,name = None):
-    self.asm_send_system_event("CF_RESET",name)
+    self.asm_send_system_event("","CF_RESET_SYSTEM",name)
    
-  def exec_send_system_event(self,element_data,event):
-    self.cf.send_system_event(element_data)
+  def exec_send_system_event(self,element_data):
+  
+    self.cf.send_system_event(element_data['data'])
    
   def asm_send_system_event(self,event_id,event_data=None,name = None):
-     event = {"event_id":event_id,"event_data":event_data}
+     event = Event(event_id,event_data)
      self.asm_one_shot_handler(self.exec_send_system_event,event,name)
   
   def exec_send_named_event(self,element_data,event):
-    self.cf.send_named_event(self,element_data["chain_name"],element_data["event"])
+    print("element_data",element_data['data'])
+    event = element_data['data']
+    self.cf.send_named_event(self,element_data["chain_name"],event)
   
   def asm_send_named_event(self,chain_name,event_id,event_data=None,name = None):
-    event = {"event_id":event_id,"event_data":event_data}
+    event = Event(event_id,event_data)
     self._check_for_valid_chain_name(chain_name)
     self.asm_one_shot_handler(self.exec_send_named_event,{"event":event,"chain_name":chain_name},name)
   
