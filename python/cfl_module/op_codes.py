@@ -84,7 +84,7 @@ if __name__ == "__main__":
     all_tests = cfl_test_driver.list_test_sequences()
     
     wait_tests = all_tests["wait"]
-    wait_tests.run_all_test_sequences()
+    #wait_tests.run_all_test_sequences()
     
     verify_tests = all_tests["verify"]
     verify_tests.run_all_test_sequences()

@@ -1,12 +1,18 @@
 
 import time
 
+def init_fn(fn_data):
+    print("init_fn",fn_data)
+
+def term_fn(fn_data):
+    print("term_fn",fn_data)
 
 def true_fn(fn_data,event):
+    
     return True
 
 def false_fn(fn_data,event):
-    print("false_fn".fn_data,event)
+    print("false_fn",fn_data,event) #test parameter passing
     return False
 
 class CF_Verify_Test():
@@ -42,7 +48,7 @@ class CF_Verify_Test():
         print("starting verify_test_pass")
         self.cf.reset_cf()
         self.cf.define_chain("end_test",auto_flag=True)
-        self.op.asm_wait_time(10.0)
+        self.op.asm_wait_time(5.0)
         self.op.asm_terminate_system()
         self.op.asm_terminate()
         self.cf.end_chain()
@@ -61,7 +67,7 @@ class CF_Verify_Test():
     def verify_test_fail_reset(self):
         print("starting verify_test_fail_reset")
         self.cf.reset_cf()
-        self.define_chain("end_test",auto_flag=True)
+        self.cf.define_chain("end_test",auto_flag=True)
         self.op.asm_wait_time(10.0) # 10 seconds time out
         self.op.asm_terminate_system()
         self.op.asm_terminate()
@@ -69,8 +75,9 @@ class CF_Verify_Test():
         
         self.cf.define_chain("verify_test",auto_flag=True)
         self.op.asm_log_message("Starting verify test")
-        self.op.asm_time_delay(1.0)
+        self.op.asm_wait_time(1.0)
         self.op.asm_verify(verify_fn = false_fn, fn_data = "test_data", reset_flag =True)
+        self.op.asm_log_message("this should not be printed")
         self.op.asm_halt()
         self.cf.end_chain()
         self.cf.finalize()
@@ -85,6 +92,7 @@ class CF_Verify_Test():
         self.cf.define_chain("verify_test",auto_flag=True)
         self.op.asm_log_message("Starting verify test")
         self.op.asm_verify(verify_fn = false_fn, fn_data = "test_data", reset_flag =False)
+        self.op.asm_log_message("this should not be printed")
         self.op.asm_wait_time(1.0)
         self.op.asm_halt()
         self.cf.end_chain()
@@ -96,7 +104,7 @@ class CF_Verify_Test():
         print("starting verify_test_timeout_reset")
             
         self.cf.reset_cf()
-        self.define_chain("end_test",auto_flag=True)
+        self.cf.define_chain("end_test",auto_flag=True)
         self.op.asm_wait_time(10.0)             #10 seconds time out
         self.op.asm_terminate_system()
         self.op.asm_terminate()
@@ -104,7 +112,7 @@ class CF_Verify_Test():
         
         self.cf.define_chain("verify_test_fail_time_out_terminate",auto_flag=True)
         self.op.asm_log_message("Starting verify test")
-        self.op.asm_verify(verify_fn = true_fn,  reset_flag = True,timeout = 10.0) # time out is 1.0 seconds 
+        self.op.asm_verify(verify_fn = true_fn,  reset_flag = True,timeout = 5.0) # time out is 1.0 seconds 
         self.op.asm_halt()
         self.cf.end_chain()   
         self.cf.finalize()
@@ -117,7 +125,7 @@ class CF_Verify_Test():
         self.cf.reset_cf()
         self.cf.define_chain("verify_test_fail_time_out_terminate",auto_flag=True)
         self.op.asm_log_message("Starting verify test")
-        self.op.asm_verify(verify_fn = true_fn,  reset_flag = False,timeout = 50.0) # time out is 5.0 seconds 
+        self.op.asm_verify(verify_fn = true_fn,verify_fn_init = init_fn,verify_fn_term = term_fn,fn_data = "test_data",  reset_flag = False,timeout = 50.0,failure_fn = false_fn,failure_data = "test_data") # time out is 5.0 seconds 
         self.op.asm_halt()
         self.cf.end_chain()
         self.cf.finalize()

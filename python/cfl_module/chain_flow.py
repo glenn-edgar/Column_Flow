@@ -267,6 +267,8 @@ class ChainFlow:
         
         if chain_name not in self.chain_dict:
             raise ValueError(f"Chain '{chain_name}' does not exist")
+        if self.chain_dict[chain_name]['active'] == False:
+            return
         self.chain_dict[chain_name]['active'] = False
         self.event_system.clear_callback_events(chain_name)
         # Get the chain data
@@ -277,11 +279,13 @@ class ChainFlow:
         terminated_count = 0
         
         for element in reversed(element_list):
+            
             # Check if element is active (enabled and initialized)
             if element['enable'] and element['initialized']:
                 # Execute termination function if it exists
                 if element['termination_function'] is not None:
                     try:
+                        
                         element["current_chain"] = chain_name
                         element['termination_function'](element)
                         terminated_count += 1
@@ -297,7 +301,11 @@ class ChainFlow:
      
     
        
-
+    def disable_all_chains(self):
+        for chain_name in self.list_of_chains:
+            self.disable_chain(chain_name)
+        
+        
     def send_named_queue_event(self,chain_name: str, event: Event):
         """
         Send a event to queue tied to a chain
@@ -383,9 +391,11 @@ class ChainFlow:
         if event is not None:
             
             if event.event_id == "CF_TERMINATE_SYSTEM":
+                self.disable_all_chains()
                 self._system_active = False
                 return False
             elif event.event_id == "CF_RESET_SYSTEM":
+                self.disable_all_chains()
                 return False
             self._system_active = False
             for chain_name in self.list_of_chains:
