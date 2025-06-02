@@ -449,7 +449,7 @@ class ChainFlow:
             self.enable_chain(chain)
             return False
         elif return_code == "CF_TERMINATE":
-            print("terminate chain",chain)
+         
             self.disable_chain(chain)
             return False
             

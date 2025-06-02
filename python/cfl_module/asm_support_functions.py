@@ -30,5 +30,5 @@ class Support_Functions:
     # Filter for methods that actually start with exec_
     methods = [method for method in class_methods 
                      if method.startswith('exec_') and callable(getattr(self.__class__, method))]
-    print(methods)
+    
     return sorted(methods)

@@ -18,8 +18,10 @@ class Opcodes(Basic_Opcodes,Wait_Opcodes,Verify_Opcodes,Watch_Dog_Opcodes):
         self.asm_dict = {}
         self.exec_list = []
         self.exec_dict = {}
+    
         self.build_asm_list()
         self.build_exec_list()
+        
         
     def _build_and_check_opcode_list(self,call_list, master_call_dict,master_call_list):    
         for opcode in call_list:
@@ -68,17 +70,28 @@ if __name__ == "__main__":
     def time_tick():
         time.sleep(.1)
         return 0.1,time.time()
+    
+
     cf = ChainFlow(time_tick)
     op_codes = Opcodes(cf)
-    print(op_codes.asm_list)
-    print(op_codes.exec_list)
     
-    from test_directory.wait_test import CF_Wait_Test
-    cf_wait_test = CF_Wait_Test(cf,op_codes)
-    cf_wait_test.test_wait_delay()
-    cf_wait_test.test_wait_for_event_pass()
-    cf_wait_test.test_wait_for_event_fail_reset()
-    cf_wait_test.test_wait_for_event_fail_terminate()
+    #print(op_codes.asm_list)
+    #print(op_codes.exec_list)
+    
+    from test_directory.test_sequences import CFL_test_driver
+    cfl_test_driver = CFL_test_driver(cf,op_codes)
+    
+    all_tests = cfl_test_driver.list_test_sequences()
+    
+    wait_tests = all_tests["wait"]
+    wait_tests.run_all_test_sequences()
+    
+    verify_tests = all_tests["verify"]
+    verify_tests.run_all_test_sequences()
+    
+    
+    
+    
     
     
     

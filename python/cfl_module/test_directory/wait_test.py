@@ -4,6 +4,29 @@ class CF_Wait_Test():
     def __init__(self,cf,op):  #op is opcodes object
         self.cf = cf
         self.op = op
+        self.test_sequence_dict = {}
+        self.test_sequence_dict["test_wait_delay"] = self.test_wait_delay
+        self.test_sequence_dict["test_wait_for_event_pass"] = self.test_wait_for_event_pass
+        self.test_sequence_dict["test_wait_for_event_fail_reset"] = self.test_wait_for_event_fail_reset
+        self.test_sequence_dict["test_wait_for_event_fail_terminate"] = self.test_wait_for_event_fail_terminate
+    
+        
+    def run_test_sequence(self,test_sequence_name):
+      
+        if test_sequence_name in self.test_sequence_dict:
+            print("sequence name",test_sequence_name)
+            print("\n\nrunning test sequence",test_sequence_name)
+            self.test_sequence_dict[test_sequence_name]()
+            print("end of test sequence\n\n",test_sequence_name)
+        
+        else:
+            raise ValueError(f"Test sequence {test_sequence_name} not found")
+        
+    def run_all_test_sequences(self):
+        
+        for test_sequence_name in self.test_sequence_dict:        
+            self.run_test_sequence(test_sequence_name)
+    
     
     def log_error_message(self,error_data):
         print(f"Error: {error_data}")
@@ -67,6 +90,7 @@ class CF_Wait_Test():
         
     
     def test_wait_for_event_fail_terminate(self):
+        print('starting test_wait_for_event_fail_terminate')
         print("\n\ntest_wait_for_event_fail_terminate")
         self.cf.reset_cf()
         self.cf.define_chain("wait_for_event_fail_terminate_test",auto_flag=True)
@@ -80,3 +104,4 @@ class CF_Wait_Test():
         self.cf.finalize()
         self.cf.cf_engine_start()
         print("Wait for event fail terminate test complete\n\n")
+        

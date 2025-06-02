@@ -55,7 +55,7 @@ class Wait_Opcodes(Support_Functions):
                         if element_data["reset_flag"] is True:
                             return "CF_RESET"
                         else:
-                            print("CF_TERMINATE")
+                        
                             return "CF_TERMINATE"
    
             return "CF_HALT"
