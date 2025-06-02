@@ -52,7 +52,18 @@ class ChainFlow:
         self._finalized = False   # Track if chain is finalized
         self._system_active = True
         self._execution_active = False       
+        self.reserved_chain_names = []
+        
+    def add_reserved_chain_name(self,chain_list):
+        if not isinstance(chain_list,list):
+            chain_list = [chain_list]
+            
+        for chain_name in chain_list:
+           
     
+            if chain_name not in self.reserved_chain_names:
+                self.reserved_chain_names.append(chain_name)
+            
     def define_chain(self, chain_name, auto_flag=False):
         """
         Start defining a new processing chain
@@ -71,6 +82,9 @@ class ChainFlow:
         if self._finalized:
             raise RuntimeError("Cannot define chains after finalization")
         
+        if chain_name not in self.reserved_chain_names:
+            self.reserved_chain_names.append(chain_name)
+            
         if self._current_chain is not None:
             raise ValueError(f"Cannot define new chain '{chain_name}' while chain '{self._current_chain}' is still being defined. Call end_chain() first.")
         
@@ -413,14 +427,14 @@ class ChainFlow:
         while self.event_system.has_callback_events(chain):
             event_cb = self.event_system.get_next_callback_event(chain)
             if event is not None:
-                self.execute_chain_elements(chain,event_cb)
+                self.execute_chain_element(chain,event_cb)
           
         self.execute_chain_element(chain,event)
         
         while self.event_system.has_callback_events(chain):
             event_cb = self.event_system.get_next_callback_event(chain)
             if event is not None:
-                self.execute_chain_elements(chain,event_cb)
+                self.execute_chain_element(chain,event_cb)
      
     def execute_chain_element(self, chain: str, event: Event):
         for element in self.chain_dict[chain]['element_list']:

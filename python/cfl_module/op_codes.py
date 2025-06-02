@@ -5,7 +5,7 @@ from wait import Wait_Opcodes
 from verify import Verify_Opcodes
 from watch_dog import Watch_Dog_Opcodes
 from chain_flow import ChainFlow
-
+from cf_events import Event
 
 class Opcodes(Basic_Opcodes,Wait_Opcodes,Verify_Opcodes,Watch_Dog_Opcodes):
     def __init__(self,cf):
@@ -73,13 +73,14 @@ if __name__ == "__main__":
     
 
     cf = ChainFlow(time_tick)
+    event = Event
     op_codes = Opcodes(cf)
     
     #print(op_codes.asm_list)
     #print(op_codes.exec_list)
     
     from test_directory.test_sequences import CFL_test_driver
-    cfl_test_driver = CFL_test_driver(cf,op_codes)
+    cfl_test_driver = CFL_test_driver(cf,op_codes,event)
     
     all_tests = cfl_test_driver.list_test_sequences()
     
@@ -87,7 +88,10 @@ if __name__ == "__main__":
     #wait_tests.run_all_test_sequences()
     
     verify_tests = all_tests["verify"]
-    verify_tests.run_all_test_sequences()
+    #verify_tests.run_all_test_sequences()
+    
+    watch_dog_tests = all_tests["watch_dog"]
+    watch_dog_tests.run_all_test_sequences()
     
     
     

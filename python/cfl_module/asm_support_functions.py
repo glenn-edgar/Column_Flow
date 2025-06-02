@@ -6,15 +6,16 @@ class Support_Functions:
 
  
   def _check_for_valid_chain_name(self,chain_name):
-    if chain_name not in self.cf.list_of_chains:
-      raise ValueError(f"Chain name '{chain_name}' is not valid")
-    return True
+    
+      if chain_name not in self.cf.reserved_chain_names:
+          raise ValueError(f"Chain name '{chain_name}' is not valid")
+      return True
 
   def _check_for_valid_chains(self,chain_names):
     if type(chain_names) is not list:
         raise TypeError("chain_names must be a list")
     for chain_name in chain_names:
-        if chain_name not in self.cf.list_of_chains:
+        if chain_name not in self.cf.reserved_chain_names:
             raise ValueError(f"Chain name '{chain_name}' is not valid")
     return True
 

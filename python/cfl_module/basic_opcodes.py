@@ -22,12 +22,12 @@ class Basic_Opcodes(Support_Functions):
       else:
         return "CF_HALT"
       
-  def exec_enable_chains(self,element_data,event):
+  def exec_enable_chains(self,element_data):
     chain_list = element_data['data']
     for chain_name in chain_list:
       self.cf.enable_chain(chain_name)
   
-  def exec_disable_chains(self,element_data,event):
+  def exec_disable_chains(self,element_data):
     chain_list = element_data['data']
     for chain_name in chain_list:
       self.cf.disable_chain(chain_name)
@@ -93,10 +93,12 @@ class Basic_Opcodes(Support_Functions):
      event = Event(event_id,event_data)
      self.asm_one_shot_handler(self.exec_send_system_event,event,name)
   
-  def exec_send_named_event(self,element_data,event):
-    print("element_data",element_data['data'])
-    event = element_data['data']
-    self.cf.send_named_event(self,element_data["chain_name"],event)
+  def exec_send_named_event(self,data):
+    element_data = data["data"]
+
+    event = element_data["event"]
+    chain_name = element_data["chain_name"]
+    self.cf.send_named_queue_event(element_data["chain_name"],event)
   
   def asm_send_named_event(self,chain_name,event_id,event_data=None,name = None):
     event = Event(event_id,event_data)
@@ -108,13 +110,7 @@ class Basic_Opcodes(Support_Functions):
   
   
   
-  def exec_set_column_state(self,element_data,event):
-    if type(element_data) is not int:
-        raise TypeError("state must be a boolean")
-    self.cf.set_column_state(element_data)
-    
-  def asm_set_column_state(self,state):
-      self.asm_one_shot_handler(self.exec_set_column_state,state,"Set_Column_State")
+ 
     
   
   
@@ -132,7 +128,7 @@ class Basic_Opcodes(Support_Functions):
    
   def asm_enable_disable_chains(self,chain_list,name = None):
     self._check_for_valid_chains(chain_list)
-    self.add_bidirectional_one_shot_handler(self.exec_enable_chains,self.exec_disable_chains,chain_list,name)
+    self.asm_bidirectional_one_shot_handler(self.exec_enable_chains,self.exec_disable_chains,chain_list,name)
 
   def asm_enable_wait_chains(self,chain_list,name = None):
     self._check_for_valid_chains(chain_list)
