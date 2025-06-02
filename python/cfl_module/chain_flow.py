@@ -97,14 +97,24 @@ class ChainFlow:
             'auto_flag': auto_flag,
             'active': False,
             'chain_data': {},
-            'sm_active': False,
-            'sm_start': 0
+            
         }
         
         self._current_chain = chain_name
         
         
- 
+    def set_chain_data(self,chain_name,data):
+        if chain_name not in self.chain_dict:
+            raise ValueError(f"Chain '{chain_name}' does not exist")
+        self.chain_dict[chain_name]['chain_data'] = data
+        
+    def get_chain_data(self,chain_name):
+        if chain_name not in self.chain_dict:
+            raise ValueError(f"Chain '{chain_name}' does not exist")
+        return self.chain_dict[chain_name]['chain_data']
+        
+        
+        
     
     def add_element(self, process_function,initialization_function=None,termination_function=None,data=None, name=None):
         """
@@ -259,7 +269,11 @@ class ChainFlow:
             element['enable'] = True
             element['initialized'] = False
       
-
+    def is_chain_active(self,chain_name):
+        if chain_name not in self.chain_dict:
+            raise ValueError(f"Chain '{chain_name}' does not exist")
+        return self.chain_dict[chain_name]['active']
+    
     def disable_chain(self, chain_name):
         """
         Disable a chain and execute termination functions for active elements
@@ -407,10 +421,13 @@ class ChainFlow:
             if event.event_id == "CF_TERMINATE_SYSTEM":
                 self.disable_all_chains()
                 self._system_active = False
-                return False
+
             elif event.event_id == "CF_RESET_SYSTEM":
+                print("made it here ------------------->")
                 self.disable_all_chains()
-                return False
+                self.initialize_chains()
+            
+                
             self._system_active = False
             for chain_name in self.list_of_chains:
                 if self.chain_dict[chain_name]['active']:
@@ -418,7 +435,7 @@ class ChainFlow:
         else:
             pass
        
-        return True
+        
     
     def execute_chain_event(self, chain: str, event: Event):
         self._current_chain = chain
@@ -433,6 +450,7 @@ class ChainFlow:
         
         while self.event_system.has_callback_events(chain):
             event_cb = self.event_system.get_next_callback_event(chain)
+        
             if event is not None:
                 self.execute_chain_element(chain,event_cb)
      
@@ -467,7 +485,7 @@ class ChainFlow:
         elif return_code == "CF_DISABLE":
             element['enable'] = False
             element['initialized'] = False
-            return False
+            return True
         elif return_code == "CF_RESET":
             self.disable_chain(chain)
             self.enable_chain(chain)

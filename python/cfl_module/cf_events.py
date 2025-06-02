@@ -225,6 +225,7 @@ class DualEventQueueSystem:
         """Add event to callback events queue"""
         if chain_name not in self.chain_list:
             raise ValueError(f"Chain '{chain_name}' does not exist")
+        
         return self.callback_events[chain_name].enqueue(event)
     
     def get_next_normal_event(self) -> Optional[Event]:
@@ -235,6 +236,7 @@ class DualEventQueueSystem:
         """Get next event from callback events queue"""
         if chain_name not in self.chain_list:
             raise ValueError(f"Chain '{chain_name}' does not exist")
+        
         return self.callback_events[chain_name].dequeue()   
     
     def has_normal_events(self) -> bool:

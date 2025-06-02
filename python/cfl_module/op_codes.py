@@ -91,8 +91,10 @@ if __name__ == "__main__":
     #verify_tests.run_all_test_sequences()
     
     watch_dog_tests = all_tests["watch_dog"]
-    watch_dog_tests.run_all_test_sequences()
+    #watch_dog_tests.run_all_test_sequences()
     
+    basic_tests = all_tests["basic"]
+    basic_tests.run_all_test_sequences()
     
     
     
