@@ -33,3 +33,20 @@ class Support_Functions:
                      if method.startswith('exec_') and callable(getattr(self.__class__, method))]
     
     return sorted(methods)
+  
+  def null_function_disable(self,element_data,event):
+    return "CF_DISABLE"
+  
+  def null_function_continue(self,element_data,event):
+    return "CF_CONTINUE"
+  
+  def null_function_halt(self,element_data,event):
+    return "CF_HALT"
+  
+  def null_function_reset(self,element_data,event):
+    return "CF_RESET"
+  
+  def null_function_terminate(self,element_data,event):
+    return "CF_TERMINATE"
+  
+  

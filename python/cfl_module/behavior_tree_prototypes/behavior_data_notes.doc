@@ -1,0 +1,99 @@
+Complete ltree Search Patterns Reference
+1. Basic Wildcard Patterns
+Single Level (*)
+company.*               # Direct children: company.engineering, company.sales
+*.backend              # Any path ending with backend
+company.*.team         # Department teams: company.engineering.team
+Multi-Level (**)
+company.**             # All descendants (including company itself)
+**.api                 # Any path ending with api
+engineering.**         # All under engineering subtree
+2. Quantified Patterns
+Exact Count (*{n})
+*{3}                   # Exactly 3 levels: a.b.c
+company.*{1}           # Exactly 1 level after company
+*{2}.api              # Exactly 2 levels before api
+Range Count (*{n,m})
+*{1,3}                # 1 to 3 levels total
+company.*{1,2}        # 1-2 levels after company
+*{2,4}.service        # 2-4 levels before service
+Minimum Count (*{n,})
+*{2,}                 # 2 or more levels
+company.*{1,}         # At least 1 level after company
+Maximum Count (*{,m})
+*{,3}                 # Up to 3 levels
+company.*{,2}         # Up to 2 levels after company
+3. Choice Patterns
+Alternatives ({a,b,c})
+company.{engineering,sales,marketing}     # Any of these departments
+*.{api,web,mobile}                       # Services of these types
+{frontend,backend}.{api,service}         # Multiple choices at multiple levels
+4. @ Operators (The Key Missing Piece!)
+Ancestor Operator (@>)
+python# PostgreSQL: WHERE path @> 'company.engineering'
+# Finds all descendants OF the given path
+results = tree.query_by_operator('@>', 'company.engineering')
+# Returns: company.engineering.backend, company.engineering.frontend, etc.
+Descendant Operator (<@)
+python# PostgreSQL: WHERE 'company.engineering.backend' <@ path  
+# Finds all ancestors OF the given path
+results = tree.query_by_operator('<@', 'company.engineering.backend')
+# Returns: company, company.engineering
+ltxtquery Operator (@@)
+python# Full-text search with boolean logic
+tree.query_ltxtquery('engineering')                    # Contains 'engineering'
+tree.query_ltxtquery('engineering & backend')          # Contains both words
+tree.query_ltxtquery('frontend | mobile')              # Contains either word
+tree.query_ltxtquery('engineering & !sales')           # Engineering but not sales
+tree.query_ltxtquery('(backend | frontend) & api')     # Complex boolean logic
+Pattern Match Operator (~)
+python# Standard lquery pattern matching
+tree.query('company.engineering.*')        # Same as ~ operator in PostgreSQL
+tree.query_by_operator('~', 'company.**')  # Alternative syntax
+Concatenation Operator (||)
+python# Combine paths
+new_path = tree.ltree_concatenate('company.engineering', 'new.service')
+# Result: 'company.engineering.new.service'
+5. Real-World Pattern Examples
+Organizational Queries:
+python# All engineering teams
+tree.query('company.engineering.*')
+
+# All APIs anywhere in the system  
+tree.query('**.api')
+
+# Backend services 2-3 levels deep
+tree.query('company.*{1,2}.backend')
+
+# Any team in engineering or sales
+tree.query('company.{engineering,sales}.*')
+
+# Find paths containing both 'backend' and 'api'
+tree.query_ltxtquery('backend & api')
+
+# All descendants of engineering department
+tree.query_by_operator('@>', 'company.engineering')
+Complex Hierarchical Queries:
+python# Services exactly 4 levels deep
+tree.query('*{3}.service')
+
+# Mobile or web apps under any frontend team
+tree.query('**.frontend.{mobile,web}')
+
+# All paths with 'team' anywhere in them
+tree.query_ltxtquery('team')
+
+# Everything under engineering except sales-related
+tree.query_ltxtquery('engineering & !sales')
+6. Operator Precedence and Combinations
+Multiple Operators:
+python# Find all backend APIs (using both pattern and text search)
+backend_paths = tree.query('**.backend.**')
+api_paths = [p for p in backend_paths if tree.ltxtquery_match(p['path'], 'api')]
+
+# Complex hierarchical relationships
+ancestors = tree.query_by_operator('<@', 'company.engineering.backend.api')
+descendants = tree.query_by_operator('@>', 'company.engineering')
+7. PostgreSQL Equivalents
+Python MethodPostgreSQL SQLDescriptiontree.query('pattern')WHERE path ~ 'pattern'Pattern matchingtree.query_ltxtquery('words')WHERE path @@ 'words'Text searchtree.query_by_operator('@>', 'path')WHERE 'path' @> pathFind descendantstree.query_by_operator('<@', 'path')WHERE path <@ 'path'Find ancestorstree.ltree_concatenate(a, b)path1 || path2Concatenate paths
+This comprehensive pattern system makes ltree incredibly powerful for hierarchical data queries, allowing you to express complex organizational 
