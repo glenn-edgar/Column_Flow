@@ -41,7 +41,7 @@ class CF_Basic_Tests():
     asm_disable_chains(self,chain_list,name = None):
     asm_enable_disable_chains(self,chain_list,name = None):
     asm_enable_wait_chains(self,chain_list,name = None):
-    asm_join_chains(self,chain_list,name = None):
+    asm_chain_join_or(self,chain_list,name = None):
     
     """
     def initialization_one_shot_handler(self,data):
@@ -60,7 +60,7 @@ class CF_Basic_Tests():
         self.cf.event_id_dict.add_event_id("test_event_2","Test event 2")
         self.cf.event_id_dict.add_event_id("test_event_3","Test event 3")
         
-        self.cf.add_reserved_chain_name(["sub_chain_1","sub_chain_2","sub_chain_3","sub_chain_4"])
+        self.cf.add_reserved_chain_name(["sub_chain_1","sub_chain_2","sub_chain_3","sub_chain_4","sub_chain_5","sub_chain_6"])
         self.cf.define_chain("top_level_chain",auto_flag=True)
         self.op.asm_log_message("\n\nStarting top level chain")
         self.op.asm_enable_chains(chain_list = ["sub_chain_1","sub_chain_2"])
@@ -76,8 +76,16 @@ class CF_Basic_Tests():
         self.op.asm_enable_chains(chain_list = ["sub_chain_4"])
         self.op.asm_wait_time(3.0)
         self.op.asm_disable_chains(chain_list = ["sub_chain_1","sub_chain_2"])
-        self.op.asm_join_chains(chain_list = ["sub_chain_4"])
+        self.op.asm_chain_join_or(chain_list = ["sub_chain_4"])
         self.op.asm_log_message("sub_chain_4 joined\n\n")
+        self.op.asm_enable_chains(chain_list = ["sub_chain_5"])
+        self.op.asm_wait_time(10.0)
+        self.op.asm_disable_chains(chain_list = ["sub_chain_5"])
+        self.op.asm_log_message("sub_chain_5 disabled\n\n")
+        self.op.asm_enable_chains(chain_list = ["sub_chain_6"])
+        self.op.asm_wait_time(20.0)
+        self.op.asm_disable_chains(chain_list = ["sub_chain_6"])
+        self.op.asm_log_message("sub_chain_6 disabled\n\n")
         self.op.asm_log_message("Top level chain complete\n\n")
         self.op.asm_terminate()
         self.cf.end_chain()
@@ -100,7 +108,7 @@ class CF_Basic_Tests():
         
         self.op.asm_send_named_event(chain_name = "sub_chain_1",event_id = "test_event_2",event_data = "test event 2 data")
         self.op.asm_send_named_event(chain_name = "sub_chain_1",event_id = "test_event_3",event_data = "test event 3 data")
-        self.op.asm_wait_time(1.0)
+        self.op.asm_wait_time(2.0)
         self.op.asm_halt()
         self.cf.end_chain()
         
@@ -114,9 +122,26 @@ class CF_Basic_Tests():
         self.cf.define_chain("sub_chain_4")
         self.op.asm_log_message("Starting sub chain 4")
         self.op.asm_enable_chains(chain_list = ["sub_chain_1","sub_chain_2"])
-        self.op.asm_join_chains(chain_list = ["sub_chain_1","sub_chain_2"])
+        self.op.asm_chain_join_and(chain_list = ["sub_chain_1","sub_chain_2"])
         self.op.asm_terminate()
         self.cf.end_chain()
+        
+        
+        self.cf.define_chain("sub_chain_5")
+        self.op.asm_enable_chains(chain_list = ["sub_chain_1","sub_chain_2"])
+        self.op.asm_chain_join_match_n_out_of_m(chain_list = ["sub_chain_1","sub_chain_2"],match_limit=1,name = "sub_chain_5")
+        self.op.asm_terminate()
+        self.cf.end_chain()
+        
+        self.cf.define_chain("sub_chain_6")
+        self.op.asm_log_message("Starting sub chain 6")
+        self.op.asm_enable_chains(chain_list = ["sub_chain_1","sub_chain_2"])
+        self.op.asm_exception_handler(event_list = ["CF_TIMER_EVENT"],count=100,bool_fn=None,bool_data=None,reset_flag=False,chain_list=["sub_chain_1","sub_chain_2"])
+        self.op.asm_log_message("sub_chain_6 exception handler added\n\n")
+        self.op.asm_halt()
+        self.cf.end_chain()
+        
+        
         
         self.cf.finalize()
         self.cf.cf_engine_start()

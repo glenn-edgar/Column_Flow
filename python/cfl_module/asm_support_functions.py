@@ -16,7 +16,7 @@ class Support_Functions:
         raise TypeError("chain_names must be a list")
     for chain_name in chain_names:
         if chain_name not in self.cf.reserved_chain_names:
-            raise ValueError(f"Chain name '{chain_name}' is not valid")
+            raise ValueError(f"Chain name {chain_name} is not valid")
     return True
 
   def list_all_asm(self):

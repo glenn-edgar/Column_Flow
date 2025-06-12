@@ -8,7 +8,7 @@ class Behavior_Tree_Control(FullLtreeStorage):
         self.path_list = []
         self.chain_list = []
         self.chain_data = {}
-        self.chain_data_path = {}
+        self.chain_data_link = {}
         
     
     def add_composite_element(self, chain_name, data ):
@@ -17,7 +17,7 @@ class Behavior_Tree_Control(FullLtreeStorage):
         self.chain_list.append(chain_name)
         self.path_list.append(chain_name)
         path_string = ".".join(self.path_list)
-        self.chain_data_path[chain_name] = path_string
+        self.chain_data_link[chain_name] = path_string
         self.chain_data[chain_name] = data
         self.store(path_string, data)
         return path_string
@@ -33,7 +33,7 @@ class Behavior_Tree_Control(FullLtreeStorage):
         self.path_list.append(chain_name)
         self.chain_list.append(chain_name)
         path_string = ".".join(self.path_list)
-        self.chain_data_path[chain_name] = path_string
+        self.chain_data_link[chain_name] = path_string
         self.chain_data[chain_name] = data
         self.store(path_string, data)
         self.path_list.pop()
@@ -58,7 +58,10 @@ class Behavior_Tree_Control(FullLtreeStorage):
         if len(self.path_list) > 0:
             raise ValueError("Path list is not empty")
         
-    
+
+
+        
+        
 if __name__ == "__main__":
     from chain_flow import ChainFlow
     def tick():

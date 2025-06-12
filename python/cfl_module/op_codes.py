@@ -24,12 +24,17 @@ class Opcodes(Basic_Opcodes,Wait_Opcodes,Verify_Opcodes,Watch_Dog_Opcodes):
         
         
     def _build_and_check_opcode_list(self,call_list, master_call_dict,master_call_list):    
+        
+        
         for opcode in call_list:
             if master_call_dict.get(opcode) is None:
                 master_call_dict[opcode] = opcode
+    
                 master_call_list.append(opcode)
             else:
                 raise ValueError(f"Opcode {opcode} is already defined")
+        master_call_list.sort()
+        
    
    
    
@@ -76,7 +81,7 @@ if __name__ == "__main__":
     event = Event
     op_codes = Opcodes(cf)
     
-    #print(op_codes.asm_list)
+   
     #print(op_codes.exec_list)
     
     from test_directory.test_sequences import CFL_test_driver

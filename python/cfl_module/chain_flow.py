@@ -256,8 +256,9 @@ class ChainFlow:
         
         if not self._finalized:
             raise RuntimeError("ChainFlow must be finalized before enabling chains")
-        
-        if chain_name not in self.chain_dict:
+    
+        if chain_name not in self.chain_dict.keys():
+            
             raise ValueError(f"Chain '{chain_name}' does not exist")
         
         # Enable the chain
@@ -273,6 +274,8 @@ class ChainFlow:
         if chain_name not in self.chain_dict:
             raise ValueError(f"Chain '{chain_name}' does not exist")
         return self.chain_dict[chain_name]['active']
+    
+ 
     
     def disable_chain(self, chain_name):
         """
